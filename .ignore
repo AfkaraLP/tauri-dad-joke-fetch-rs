@@ -1,0 +1,6 @@
+node_modules/*
+*.png
+*.icns
+*.ico
+*.svg
+src-tauri/target
