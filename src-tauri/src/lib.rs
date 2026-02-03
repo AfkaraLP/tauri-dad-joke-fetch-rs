@@ -47,7 +47,20 @@ impl<const N: usize> JokeQueue<N> {
         Self { client, queue }
     }
 
-    pub async fn fill(&self, s: impl Into<String>) {
+    pub async fn push_vec(&self, mut v: Vec<String>) {
+        if v.len() > N {
+            v.truncate(N);
+        }
+
+        while v.len() < N {
+            v.push("Couldn't fetch a dad joke, sorry...".to_string());
+        }
+
+        let mut q = self.queue.lock().await;
+        *q = v.into();
+    }
+
+    pub async fn add_one(&self, s: impl Into<String>) {
         let s = s.into();
         let mut q = self.queue.lock().await;
         if q.len() >= N {
@@ -94,14 +107,24 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|_| {
             tauri::async_runtime::spawn(async {
+                let mut handles = Vec::new();
                 for _ in 0..10 {
-                    tokio::spawn(async {
+                    let handle = tokio::spawn(async {
                         let joke = request_dad_joke(&JOKES.client)
                             .await
                             .unwrap_or("Failed to fetch dad joke".into());
-                        JOKES.fill(joke).await;
+                        joke
                     });
+                    handles.push(handle);
                 }
+                let mut results: Vec<String> = Vec::with_capacity(10);
+                for handle in handles {
+                    match handle.await {
+                        Ok(joke) => results.push(joke),
+                        Err(_) => results.push("Failed getting dad_joke".into()),
+                    }
+                }
+                JOKES.push_vec(results).await;
             });
             Ok(())
         })
