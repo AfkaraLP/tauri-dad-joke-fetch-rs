@@ -10,9 +10,6 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.create-release.outputs.result }}
-      release_upload_url: ${{ steps.create-release.outputs.upload_url }}
 
     steps:
       - name: Checkout repository
