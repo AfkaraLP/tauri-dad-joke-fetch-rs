@@ -15,6 +15,18 @@ Before you begin, ensure you have the following installed:
 
 ### 1. Installation
 
+#### Option A: Download Prebuilt Binaries (Recommended)
+
+Download the latest release for your platform from the [Releases page](https://github.com/AfkaraLP/tauri-dad-joke-fetch-rs/releases):
+
+- **Linux**: Download the `.deb` package or `.AppImage` file
+  - For `.deb`: `sudo dpkg -i dad_jokes_*.deb`
+  - For `.AppImage`: Make it executable with `chmod +x dad_jokes_*.AppImage` and run it
+- **macOS**: Download the `.dmg` file, open it, and drag the app to your Applications folder
+- **Windows**: Download the `.msi` installer or `.exe` and run it
+
+#### Option B: Build from Source
+
 Install the project dependencies (frontend and Tauri CLI):
 
 ```bash
