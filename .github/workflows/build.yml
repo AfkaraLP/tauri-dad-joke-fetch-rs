@@ -1,20 +1,47 @@
-name: Build Executables
+name: Create Release
 
 on:
   push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 jobs:
-  build:
+  create-release:
     permissions:
-      contents: read
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+      release_upload_url: ${{ steps.create-release.outputs.upload_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: tag_name
+        run: echo "current_version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${{ steps.tag_name.outputs.current_version }}`,
+              name: `Dad Jokes v${{ steps.tag_name.outputs.current_version }}`,
+              body: 'Download the appropriate installer for your platform below.',
+              draft: false,
+              prerelease: false
+            })
+            return data.id
+
+  build:
+    needs: create-release
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -73,29 +100,25 @@ jobs:
       - name: Build the app
         run: bun tauri build --target ${{ matrix.platform.rust_target }}
 
-      - name: Upload artifacts (Linux)
+      - name: Upload Release Assets (Linux)
         if: matrix.platform.os == 'ubuntu-22.04'
-        uses: actions/upload-artifact@v4
+        uses: softprops/action-gh-release@v2
         with:
-          name: dad-jokes-${{ matrix.platform.name }}
-          path: |
+          files: |
             src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/appimage/*.AppImage
 
-      - name: Upload artifacts (macOS)
+      - name: Upload Release Assets (macOS)
         if: startsWith(matrix.platform.os, 'macos')
-        uses: actions/upload-artifact@v4
+        uses: softprops/action-gh-release@v2
         with:
-          name: dad-jokes-${{ matrix.platform.name }}
-          path: |
+          files: |
             src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/dmg/*.dmg
-            src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/macos/*.app
 
-      - name: Upload artifacts (Windows)
+      - name: Upload Release Assets (Windows)
         if: matrix.platform.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: softprops/action-gh-release@v2
         with:
-          name: dad-jokes-${{ matrix.platform.name }}
-          path: |
+          files: |
             src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/msi/*.msi
             src-tauri/target/${{ matrix.platform.rust_target }}/release/bundle/nsis/*.exe
