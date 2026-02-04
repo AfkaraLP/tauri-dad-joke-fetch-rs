@@ -49,5 +49,5 @@ Create a production-ready, optimized bundle for your operating system (e.g., `.m
 bun tauri build
 ```
 
-The final installer will be located in:
+The final installer will be located in the directory:
 `src-tauri/target/release/bundle/`
